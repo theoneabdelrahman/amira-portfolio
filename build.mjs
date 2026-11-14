@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,6 +7,9 @@ import { films, locales, site, visualWork, writing } from './content.mjs';
 const locale = locales.en;
 
 const root = fileURLToPath(new URL('./', import.meta.url));
+const versioned = file => `${file}?v=${createHash('sha256').update(readFileSync(join(root, file))).digest('hex').slice(0, 12)}`;
+const stylesheet = versioned('style.css');
+const script = versioned('site.js');
 const escape = value => String(value).replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;').replaceAll('"', '&quot;');
 const icon = name => `<svg class="icon" aria-hidden="true"><use href="#${name}"/></svg>`;
 const outbound = 'target="_blank" rel="noopener noreferrer"';
@@ -172,8 +176,8 @@ function render(page) {
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400..700&amp;family=Instrument+Serif:ital@0;1&amp;family=Noto+Sans+Arabic:wght@400&amp;display=swap">
-  <link rel="stylesheet" href="style.css">
-  <script src="site.js" defer></script>
+  <link rel="stylesheet" href="${stylesheet}">
+  <script src="${script}" defer></script>
   ${page.structured ? `<script type="application/ld+json">${JSON.stringify({ '@context': 'https://schema.org', url, ...page.structured }).replaceAll('<', '\\u003c')}</script>` : ''}
 </head>
 <body id="top">
