@@ -3,7 +3,7 @@ const mobile = window.matchMedia('(max-width: 950px)');
 const topbar = document.querySelector('.topbar');
 const menu = topbar.querySelector('.menu-toggle');
 const panel = topbar.querySelector('.nav-panel');
-const navLinks = Array.from(panel.querySelectorAll('nav a'));
+const navLinks = Array.from(topbar.querySelectorAll('nav a'));
 const sections = Array.from(document.querySelectorAll('main [id]'))
   .filter(section => ['work', 'art', 'about', 'writing', 'contact'].includes(section.id));
 let scrollFrame = 0;
@@ -19,15 +19,13 @@ menu.hidden = false;
 setMenu(false);
 mobile.addEventListener('change', () => setMenu(false));
 menu.addEventListener('click', () => setMenu(menu.getAttribute('aria-expanded') !== 'true'));
-panel.addEventListener('click', event => {
-  const link = event.target.closest('a');
+topbar.addEventListener('click', event => {
+  const link = event.target.closest('.nav-panel a, .nav-shortcuts a');
   if (!mobile.matches || event.defaultPrevented || !link) return;
   if (link.getAttribute('href').startsWith('#')) {
     const target = document.getElementById(link.hash === '#top' ? 'main' : link.hash.slice(1));
     target?.setAttribute('tabindex', '-1');
     target?.focus({ preventScroll: true });
-  } else if (link.target === '_blank') {
-    menu.focus();
   }
   setMenu(false);
 });

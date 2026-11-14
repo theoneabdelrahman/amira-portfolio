@@ -1,5 +1,6 @@
 export const site = {
   name: 'Amira Abdelfadil',
+  email: 'byamira01@gmail.com',
   url: 'https://supergreatwin.github.io/amira-portfolio/',
   description: 'Films, visual work, and writing by Amira Abdelfadil, an Egyptian filmmaker, photographer, and multidisciplinary artist based in Cairo.',
   socials: [
@@ -34,6 +35,7 @@ export const films = [
   },
   {
     id: 'street-x-food', title: 'Street X Food', posterWidth: 707,
+    tagline: 'A love letter to Cairo and its people.',
     credits: [['A film by', 'Amira Abdel-Fadil']],
     stills: [
       ['street-x-food-01.jpg', 1120, 573, 'A pan of food at a street food stand'],
@@ -75,12 +77,6 @@ export const films = [
       ['double-edged-sword-03.jpg', 1120, 662, 'Cattle in a dry field'],
     ],
   },
-];
-
-export const visualWork = [
-  ['street-x-food-02.jpg', 'The market', 'street-x-food'],
-  ['biophilia-03.jpg', 'At the edge of the city', 'biophilia'],
-  ['mamina-01.jpg', 'The kitchen', 'mamina'],
 ];
 
 export const writing = [

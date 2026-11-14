@@ -1,4 +1,4 @@
-# Amira Abdelfadil · A Way of Seeing
+# Amira Abdelfadil · Film & Art
 
 A static portfolio with five film pages, a visual-work archive, biography, writing, and contact through Amira’s official social profiles.
 
@@ -9,10 +9,8 @@ Open `index.html` directly, or run `python3 -m http.server 8286` in the reposito
 ## Update content
 
 - Edit film metadata, synopses, credits, stills, social links, or writing in `content.mjs`. Runtimes use whole seconds and appear only when verified. Label poster crops as poster details.
-- Run `node build.mjs` to regenerate the standalone pages and SEO files. Run `node build.mjs --check` to check that they match their source.
+- Edit `index.html`, `home.css`, and `home.js` for the original homepage layout and film popups. Run `node build.mjs` to update the standalone pages and SEO files. Run `node build.mjs --check` to check that they match their source.
 - Keep original images under `assets/`. Place same-aspect-ratio full-size and 480px-wide WebP derivatives in `assets/optimized/` using the original basename, for example `mamina-02.webp` and `mamina-02-480.webp`. JPG remains the fallback and original-size lightbox image.
 - English is the published locale. Arabic text uses explicit language and direction attributes. The locale definition holds document direction, navigation, and social metadata locale for future approved translations. Add translated page content and language links only when the complete copy has been reviewed.
 
-## Changes
-
-Added a cream-and-espresso editorial design, direct film URLs, a shared image viewer, visual-work and writing archives, and social contact. Retained the five films, original assets, and production credits. Removed public festival, exhibition, and award material and the Manassat profile link.
+The homepage uses the cream, beige, and espresso design with plum accents. Its film popups link to the corresponding standalone film pages.
