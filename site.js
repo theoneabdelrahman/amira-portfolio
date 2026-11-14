@@ -1,162 +1,147 @@
-const root = document.documentElement;
 const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
-const hero = document.querySelector('.hero');
-const heroMedia = document.querySelector('.hero-media');
-const visual = document.querySelector('.hero-visual');
+const mobile = window.matchMedia('(max-width: 950px)');
 const topbar = document.querySelector('.topbar');
-const navLinks = Array.from(topbar.querySelectorAll('nav a, .topbar-end'));
-const navSections = navLinks.map(link => document.querySelector(link.hash));
+const menu = topbar.querySelector('.menu-toggle');
+const panel = topbar.querySelector('.nav-panel');
+const navLinks = Array.from(panel.querySelectorAll('nav a'));
+const sections = Array.from(document.querySelectorAll('main [id]'))
+  .filter(section => ['work', 'art', 'about', 'writing', 'contact'].includes(section.id));
+let scrollFrame = 0;
 
-let frame = 0;
-let targetX = 0;
-let targetY = 0;
-let driftX = 0;
-let driftY = 0;
+function setMenu(open) {
+  menu.setAttribute('aria-expanded', String(open));
+  panel.classList.toggle('open', open);
+  panel.inert = mobile.matches && !open;
+}
 
-function updateFrame() {
-  frame = 0;
-  const scroll = Math.max(0, window.scrollY);
-  const pageHeight = root.scrollHeight - window.innerHeight;
-  const headerHeight = topbar.offsetHeight;
-  const endOfPage = pageHeight > 0 && scroll >= pageHeight - 2;
-  let activeIndex = -1;
+topbar.classList.add('has-menu');
+menu.hidden = false;
+setMenu(false);
+mobile.addEventListener('change', () => setMenu(false));
+menu.addEventListener('click', () => setMenu(menu.getAttribute('aria-expanded') !== 'true'));
+panel.addEventListener('click', event => {
+  const link = event.target.closest('a');
+  if (!mobile.matches || event.defaultPrevented || !link) return;
+  if (link.getAttribute('href').startsWith('#')) {
+    const target = document.getElementById(link.hash === '#top' ? 'main' : link.hash.slice(1));
+    target?.setAttribute('tabindex', '-1');
+    target?.focus({ preventScroll: true });
+  } else if (link.target === '_blank') {
+    menu.focus();
+  }
+  setMenu(false);
+});
+document.addEventListener('keydown', event => {
+  if (event.key !== 'Escape' || menu.getAttribute('aria-expanded') !== 'true') return;
+  setMenu(false);
+  menu.focus();
+});
+document.addEventListener('click', event => {
+  if (!topbar.contains(event.target) && menu.getAttribute('aria-expanded') === 'true') setMenu(false);
+});
 
-  navSections.forEach((section, index) => {
-    if (section.getBoundingClientRect().top <= headerHeight + 48) activeIndex = index;
-  });
-  if (endOfPage) activeIndex = navSections.length - 1;
+function updateScroll() {
+  scrollFrame = 0;
+  const position = Math.max(window.scrollY, 0);
+  const range = document.documentElement.scrollHeight - window.innerHeight;
+  topbar.style.setProperty('--progress', range > 0 ? Math.min(position / range, 1) : 0);
+  topbar.classList.toggle('scrolled', position > 12);
+  if (!sections.length) return;
 
-  navLinks.forEach((link, index) => {
-    if (index === activeIndex) link.setAttribute('aria-current', 'location');
+  const active = sections.findLast(section => section.getBoundingClientRect().top <= topbar.offsetHeight + 72);
+  const onPage = { work: '#work', art: 'art.html', about: 'about.html', writing: 'writing.html', contact: 'contact.html' };
+  const current = range > 0 && position >= range - 4 ? 'contact.html' : onPage[active?.id] ?? '#top';
+  navLinks.forEach(link => {
+    if (link.getAttribute('href') === current) link.setAttribute('aria-current', 'location');
     else link.removeAttribute('aria-current');
   });
-  topbar.classList.toggle('scrolled', scroll > 20);
-  topbar.style.setProperty('--progress', pageHeight > 0 ? Math.min(scroll / pageHeight, 1) : 0);
-
-  if (motion.matches || !finePointer.matches || scroll > hero.offsetHeight) return;
-
-  driftX += (targetX - driftX) * .12;
-  driftY += (targetY - driftY) * .12;
-  const scrollDrift = Math.min(scroll * .035, 20);
-  visual.style.setProperty('--drift-x', `${driftX.toFixed(2)}px`);
-  visual.style.setProperty('--drift-y', `${(driftY + scrollDrift).toFixed(2)}px`);
-  if (Math.abs(targetX - driftX) + Math.abs(targetY - driftY) > .15) scheduleFrame();
 }
 
-function scheduleFrame() {
-  if (!frame) frame = requestAnimationFrame(updateFrame);
+function scheduleScroll() {
+  if (!scrollFrame) scrollFrame = requestAnimationFrame(updateScroll);
 }
 
-function resetDrift() {
-  targetX = 0;
-  targetY = 0;
-  scheduleFrame();
-}
+window.addEventListener('scroll', scheduleScroll, { passive: true });
+window.addEventListener('resize', scheduleScroll, { passive: true });
+window.addEventListener('load', scheduleScroll);
+scheduleScroll();
 
-function resetMotion() {
-  driftX = 0;
-  driftY = 0;
-  visual.style.removeProperty('--drift-x');
-  visual.style.removeProperty('--drift-y');
-  resetDrift();
-}
+const dialog = document.querySelector('.lightbox');
+const image = dialog.querySelector('img');
+const caption = dialog.querySelector('figcaption');
+const count = dialog.querySelector('.lightbox-count');
+const close = dialog.querySelector('[data-close]');
+const stage = dialog.querySelector('.lightbox-stage');
+const steps = Array.from(dialog.querySelectorAll('[data-step]'));
+const galleries = new Map();
+let group = [];
+let selected = 0;
+let opener = null;
+let backdropDown = false;
+let touchStart = null;
+let imageMotion = null;
 
-window.addEventListener('scroll', scheduleFrame, { passive: true });
-window.addEventListener('resize', scheduleFrame, { passive: true });
-motion.addEventListener('change', resetMotion);
-finePointer.addEventListener('change', resetMotion);
-heroMedia.addEventListener('pointermove', event => {
-  if (motion.matches || !finePointer.matches || event.pointerType === 'touch') return;
-  const bounds = heroMedia.getBoundingClientRect();
-  targetX = ((event.clientX - bounds.left) / bounds.width - .5) * -15;
-  targetY = ((event.clientY - bounds.top) / bounds.height - .5) * -11;
-  scheduleFrame();
-});
-heroMedia.addEventListener('pointerleave', resetDrift);
-scheduleFrame();
-
-function animateIn(element, delay = 0) {
-  if (motion.matches || !element.animate) return;
-  element.animate(
-    [{ opacity: .48, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }],
-    { duration: 450, delay, fill: 'backwards', easing: 'cubic-bezier(.2,.75,.25,1)' },
-  );
-}
-
-if ('IntersectionObserver' in window) {
-  const reveals = new IntersectionObserver(entries => {
-    entries.forEach(({ target, isIntersecting }) => {
-      if (!isIntersecting) return;
-      if (!target.contains(document.activeElement)) animateIn(target);
-      reveals.unobserve(target);
-    });
-  }, { threshold: .14 });
-  document.querySelectorAll('.section-heading, .about-grid, .recognition, .writing-grid, .footer-main').forEach(element => reveals.observe(element));
-}
-
-motion.addEventListener('change', () => {
-  if (motion.matches) document.getAnimations().filter(animation => !animation.animationName && !animation.transitionProperty).forEach(animation => animation.cancel());
-});
-
-const grid = document.querySelector('.film-grid');
-const viewSwitch = document.querySelector('.view-switch');
-const viewButtons = Array.from(viewSwitch.querySelectorAll('button'));
-viewSwitch.hidden = false;
-
-viewButtons.forEach(button => button.addEventListener('click', () => {
-  if (grid.dataset.layout === button.dataset.view) return;
-  grid.dataset.layout = button.dataset.view;
-  viewButtons.forEach(option => option.setAttribute('aria-pressed', String(option === button)));
-  Array.from(grid.children).forEach((card, index) => {
-    card.getAnimations().forEach(animation => animation.cancel());
-    animateIn(card, index * 45);
-  });
-  scheduleFrame();
-}));
-
-const dialog = document.querySelector('.project-dialog');
-const projectLinks = Array.from(document.querySelectorAll('[data-project]'));
-const projectDetails = document.querySelector('.film-details');
-const dialogContent = dialog.querySelector('.dialog-content');
-const closeButton = dialog.querySelector('[data-close]');
-const dialogCount = dialog.querySelector('.dialog-count');
-let currentProject = 0;
-let trigger = null;
-let backdropPressed = false;
-
-function showProject(index) {
-  currentProject = (index + projectLinks.length) % projectLinks.length;
-  const project = document.getElementById(`project-${projectLinks[currentProject].dataset.project}`);
-  dialogContent.getAnimations().forEach(animation => animation.cancel());
-  dialogContent.replaceChildren(...Array.from(project.children, child => child.cloneNode(true)));
-  dialogContent.querySelector('h3').id = 'project-title';
-  dialogCount.textContent = `${String(currentProject + 1).padStart(2, '0')} / ${String(projectLinks.length).padStart(2, '0')}`;
-  dialog.scrollTop = 0;
+function showImage(index) {
+  selected = (index + group.length) % group.length;
+  const link = group[selected];
+  const thumbnail = link.querySelector('img');
+  image.alt = thumbnail.alt;
+  image.width = Number(link.dataset.width);
+  image.height = Number(link.dataset.height);
+  image.style.setProperty('--image-width', `${image.width}px`);
+  image.style.setProperty('--image-scale', image.width < 320 ? 2.25 : 1);
+  image.src = link.href;
+  caption.textContent = link.dataset.caption;
+  count.textContent = `${selected + 1} / ${group.length}`;
+  steps.forEach(button => { button.hidden = group.length < 2; });
+  imageMotion?.cancel();
+  if (!motion.matches) imageMotion = image.animate([{ opacity: .52 }, { opacity: 1 }], { duration: 210 });
 }
 
 if (typeof dialog.showModal === 'function') {
-  projectDetails.classList.add('dialog-ready');
-  projectLinks.forEach((link, index) => link.addEventListener('click', event => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-    event.preventDefault();
-    trigger = link;
-    showProject(index);
-    dialog.showModal();
-    closeButton.focus({ preventScroll: true });
-  }));
-
-  closeButton.addEventListener('click', () => dialog.close());
-  dialog.addEventListener('close', () => {
-    trigger?.focus({ preventScroll: true });
-    trigger = null;
+  document.querySelectorAll('[data-lightbox]').forEach(link => {
+    const key = link.dataset.lightbox;
+    if (!galleries.has(key)) galleries.set(key, []);
+    galleries.get(key).push(link);
+    link.setAttribute('aria-haspopup', 'dialog');
+    link.addEventListener('click', event => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      event.preventDefault();
+      group = galleries.get(key);
+      opener = link;
+      showImage(group.indexOf(link));
+      dialog.showModal();
+      close.focus({ preventScroll: true });
+    });
   });
 
-  dialog.querySelectorAll('[data-step]').forEach(button => button.addEventListener('click', () => {
-    showProject(currentProject + Number(button.dataset.step));
-    animateIn(dialogContent);
-    dialogContent.querySelector('h3').focus({ preventScroll: true });
-  }));
+  close.addEventListener('click', () => dialog.close());
+  dialog.addEventListener('close', () => {
+    opener?.focus({ preventScroll: true });
+    opener = null;
+    touchStart = null;
+    backdropDown = false;
+  });
+  steps.forEach(button => button.addEventListener('click', () => showImage(selected + Number(button.dataset.step))));
+  motion.addEventListener('change', event => { if (event.matches) imageMotion?.cancel(); });
+  dialog.addEventListener('keydown', event => {
+    if (event.key === 'Tab') {
+      const controls = [close, ...steps.filter(button => !button.hidden)];
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+      return;
+    }
+    if (group.length < 2 || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    event.preventDefault();
+    showImage(selected + (event.key === 'ArrowRight' ? 1 : -1));
+  });
 
   function isBackdrop(event) {
     if (event.target !== dialog) return false;
@@ -164,9 +149,25 @@ if (typeof dialog.showModal === 'function') {
     return event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom;
   }
 
-  dialog.addEventListener('pointerdown', event => { backdropPressed = isBackdrop(event); });
+  dialog.addEventListener('pointerdown', event => { backdropDown = isBackdrop(event); });
   dialog.addEventListener('click', event => {
-    if (backdropPressed && isBackdrop(event)) dialog.close();
-    backdropPressed = false;
+    if (backdropDown && isBackdrop(event)) dialog.close();
+    backdropDown = false;
+  });
+
+  stage.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'touch' && event.target === image) {
+      touchStart = { x: event.clientX, y: event.clientY };
+    }
+  });
+  stage.addEventListener('pointercancel', () => { touchStart = null; });
+  stage.addEventListener('pointerup', event => {
+    if (!touchStart) return;
+    const offsetX = event.clientX - touchStart.x;
+    const offsetY = event.clientY - touchStart.y;
+    touchStart = null;
+    if (group.length > 1 && Math.abs(offsetX) > 40 && Math.abs(offsetX) > Math.abs(offsetY) * 1.3) {
+      showImage(selected + (offsetX < 0 ? 1 : -1));
+    }
   });
 }

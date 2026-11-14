@@ -1,7 +1,18 @@
-# Amira Abdelfadil · Film & Art
+# Amira Abdelfadil · A Way of Seeing
 
-Film portfolio for Amira Abdelfadil, featuring five films, their posters and stills, selected essays, and a short biography.
+A static portfolio with five film pages, a visual-work archive, biography, writing, and contact through Amira’s official social profiles.
 
-Open `index.html` in a browser to view the site locally. The site uses plain HTML, CSS, and JavaScript. GitHub Pages serves the root of the `main` branch without a build step.
+## Preview and publish
 
-Update the film cards and corresponding `project-*` articles in `index.html` to edit the filmography. The posters, stills, and portrait were supplied for the portfolio.
+Open `index.html` directly, or run `python3 -m http.server 8286` in the repository root. GitHub Pages serves the root of `main` with `.nojekyll`. The generated HTML is checked in, so Pages does not need Node.js or a custom workflow. Assets and navigation use relative URLs. Sitemap and social preview URLs use the site address in `content.mjs`.
+
+## Update content
+
+- Edit film metadata, synopses, credits, stills, social links, or writing in `content.mjs`. Runtimes use whole seconds and appear only when verified. Label poster crops as poster details.
+- Run `node build.mjs` to regenerate the standalone pages and SEO files. Run `node build.mjs --check` to check that they match their source.
+- Keep original images under `assets/`. Place same-aspect-ratio full-size and 480px-wide WebP derivatives in `assets/optimized/` using the original basename, for example `mamina-02.webp` and `mamina-02-480.webp`. JPG remains the fallback and original-size lightbox image.
+- English is the published locale. Arabic text uses explicit language and direction attributes. The locale definition holds document direction, navigation, and social metadata locale for future approved translations. Add translated page content and language links only when the complete copy has been reviewed.
+
+## Changes
+
+Added a cream-and-espresso editorial design, direct film URLs, a shared image viewer, visual-work and writing archives, and social contact. Retained the five films, original assets, and production credits. Removed public festival, exhibition, and award material and the Manassat profile link.
